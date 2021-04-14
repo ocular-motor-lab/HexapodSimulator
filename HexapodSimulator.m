@@ -16,7 +16,10 @@ classdef HexapodSimulator < matlab.apps.AppBase
         thetaSlider       matlab.ui.control.Slider
         psiSliderLabel    matlab.ui.control.Label
         psiSlider         matlab.ui.control.Slider
+        ConnectCs         matlab.ui.control.Button
         ResetButton       matlab.ui.control.Button
+        asm = NET.addAssembly('C:\Users\raulr\Documents\Unity Projects\FormHexControl\ClassLibrary1\bin\Debug\net48\ClassLibrary1.dll')
+        dog
     end
 
     % Callbacks that handle component events
@@ -187,6 +190,12 @@ classdef HexapodSimulator < matlab.apps.AppBase
                 
                 zeroLengths = sqrt(sum((biw-aizero).*(biw-aizero))); % length of arms at zero position
                 currentLengths = sqrt(sum((biw-ai).*(biw-ai)))
+                if ~(isempty(app.dog))
+                    temp = floor(currentLengths-114);
+                    disp(temp);
+                    app.dog.constructPacket(temp(5), temp(6), temp(1), temp(2), temp(3), temp(4))
+                end
+                
                     
                 for i=1:6
                     
@@ -238,6 +247,14 @@ classdef HexapodSimulator < matlab.apps.AppBase
             end
             app.UpdateGraph(X,Y,Z,phi, theta, psi);
         end
+        
+        % Button pushed function: ConnectCs
+        function ConnectCsPushed(app, event)
+            app.dog = ClassLibrary1.Class1;
+            app.dog.connectUDP();
+%             ClassLibrary1.Class1.connectUDP();
+        end
+        
 
         % Button pushed function: ResetButton
         function ResetButtonPushed(app, event)
@@ -257,6 +274,10 @@ classdef HexapodSimulator < matlab.apps.AppBase
             phi = app.phiSlider.Value;
             theta = app.thetaSlider.Value;
             psi = app.psiSlider.Value;
+            
+            if ~(isempty(app.dog))
+                app.dog.Reset()
+            end
             
             app.UpdateGraph(X,Y,Z,phi, theta, psi);
         end
@@ -380,6 +401,12 @@ classdef HexapodSimulator < matlab.apps.AppBase
             app.psiSlider.ValueChangedFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.psiSlider.ValueChangingFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.psiSlider.Position = [458 150 150 3];
+            
+            % Create Connect Button     
+            app.ConnectCs = uibutton(app.UIFigure, 'push');
+            app.ConnectCs.ButtonPushedFcn = createCallbackFcn(app, @ConnectCsPushed, true);
+            app.ConnectCs.Position = [475 70 100 22];
+            app.ConnectCs.Text = 'Connect';
 
             % Create ResetButton
             app.ResetButton = uibutton(app.UIFigure, 'push');
@@ -391,13 +418,15 @@ classdef HexapodSimulator < matlab.apps.AppBase
             app.UIFigure.Visible = 'on';
         end
     end
+    
+
 
     % App creation and deletion
     methods (Access = public)
 
         % Construct app
         function app = test2
-
+            
             % Create UIFigure and components
             createComponents(app)
 
