@@ -121,10 +121,12 @@ classdef HexapodSimulator < matlab.apps.AppBase
             % measured the distances between arms. Short distance and long
             % distance
 
-            LongBottom = 146.5; % mm
-            ShortBottom = 31.5; % mm
-            LongTop = 162; % mm
-            ShortTop = 31.5; % mm
+            LongBottom = 146.5; % cm
+            ShortBottom = 31.5; % cm
+            LongTop = 162; % cm
+            ShortTop = 31.5; % cm
+            
+            RestHeight = 89; % cm;
             
             %           Values used in initial tests of the simulator  
             %             DBottom = 10;
@@ -135,9 +137,9 @@ classdef HexapodSimulator < matlab.apps.AppBase
             
 
             RBottom = sqrt((LongBottom/2).^2 + ((ShortBottom+LongBottom/2).^2)/3);
-            DBottom = 2*asin(ShortBottom/2/RBottom);
+            DBottom = 2*asind(ShortBottom/2/RBottom);
             RTop = sqrt((LongTop/2).^2 + ((ShortTop+LongTop/2).^2)/3);
-            DTop = 2*asin(ShortTop/2/RTop);
+            DTop = 2*asind(ShortTop/2/RTop);
             
             ArmAnglesBottom = [0-DBottom/2 0+DBottom/2 120-DBottom/2 120+DBottom/2 240-DBottom/2 240+DBottom/2];
             ArmAnglesTop = -60+[0-DTop/2 0+DTop/2 120-DTop/2 120+DTop/2 240-DTop/2 240+DTop/2];
@@ -172,7 +174,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
                     line(app.UIAxes,X+[0 Rwp(1,i)]*20,Y+[0 Rwp(2,i)]*20,Z+[0 Rwp(3,i)]*20,'linewidth',2,'color',colors(i));
                 end
                 
-                aizero = repmat([0 0 10]',1,6)+aip; % TODO: improve this, zero position is 10 units up
+                aizero = repmat([0 0 RestHeight]',1,6)+aip; % TODO: improve this, zero position is 10 units up
                 %%
                 set(app.UIAxes, 'nextplot','add');
                 patch(app.UIAxes, biw(1,[end 1:end]), biw(2,[end 1:end]), biw(3,[end 1:end]),[0.3 0.3 0.3])
@@ -196,7 +198,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
                     
                     if ( any(zeroLengths./currentLengths>1) )
                         app.UIAxes.Color = [1 0.5 0.5];
-                    elseif ( any(zeroLengths./currentLengths<0.5) )
+                    elseif ( any(zeroLengths./currentLengths<0.6) )
                         app.UIAxes.Color = [1 0.5 0.5];
                     else
                         app.UIAxes.Color = 'white';
@@ -242,7 +244,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
             
             app.XSlider.Value = 0;
             app.YSlider.Value = 0;
-            app.ZSlider.Value = 40;
+            app.ZSlider.Value = 89;
             
             app.phiSlider.Value = 0;
             app.thetaSlider.Value = 0;
@@ -298,7 +300,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
             app.UIAxes.Position = [1 51 378 405];
             app.UIAxes.XLim = [-120 120];
             app.UIAxes.YLim = [-120 120];
-            app.UIAxes.ZLim = [-10 150];
+            app.UIAxes.ZLim = [-10 200];
 
             % Create XSliderLabel
             app.XSliderLabel = uilabel(app.UIFigure);
@@ -334,11 +336,11 @@ classdef HexapodSimulator < matlab.apps.AppBase
 
             % Create ZSlider
             app.ZSlider = uislider(app.UIFigure);
-            app.ZSlider.Limits = [0 100];
+            app.ZSlider.Limits = [80 200];
             app.ZSlider.ValueChangedFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.ZSlider.ValueChangingFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.ZSlider.Position = [458 350 150 3];
-            app.ZSlider.Value = 30;
+            app.ZSlider.Value = 89;
 
             % Create phiSliderLabel
             app.phiSliderLabel = uilabel(app.UIFigure);
