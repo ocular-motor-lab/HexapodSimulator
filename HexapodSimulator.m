@@ -18,7 +18,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
         psiSlider         matlab.ui.control.Slider
         ConnectCs         matlab.ui.control.Button
         ResetButton       matlab.ui.control.Button
-        asm = NET.addAssembly('C:\Users\raulr\Documents\Unity Projects\FormHexControl\ClassLibrary1\bin\Debug\net48\ClassLibrary1.dll')
+        asm = NET.addAssembly('C:\Users\raulr\Documents\Unity Projects\HexapodSimulator\ClassLibrary1.dll')
         dog
     end
 
@@ -189,9 +189,10 @@ classdef HexapodSimulator < matlab.apps.AppBase
                 
                 
                 zeroLengths = sqrt(sum((biw-aizero).*(biw-aizero))); % length of arms at zero position
-                currentLengths = sqrt(sum((biw-ai).*(biw-ai)))
+                currentLengths = sqrt(sum((biw-ai).*(biw-ai)));
+                
                 if ~(isempty(app.dog))
-                    temp = floor(currentLengths-114);
+                    temp = floor((currentLengths-114)*10);
                     disp(temp);
                     app.dog.constructPacket(temp(5), temp(6), temp(1), temp(2), temp(3), temp(4))
                 end
