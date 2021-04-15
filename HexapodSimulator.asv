@@ -18,6 +18,8 @@ classdef HexapodSimulator < matlab.apps.AppBase
         psiSlider         matlab.ui.control.Slider
         ConnectCs         matlab.ui.control.Button
         ResetButton       matlab.ui.control.Button
+        
+        ArmLengthLabel    matlab.ui.control.Label
         hexapod
     end
     
@@ -166,54 +168,62 @@ classdef HexapodSimulator < matlab.apps.AppBase
             % The length li of link i will be simply computed from
             
             
+            % TODO: right now restingArmLengths is calculated based on
+            % the app.RestHeight. But the value should be exactly or
+            % very close to app.MinArmLength. 
+            
+            aizero = repmat([0 0 app.RestHeight]',1,6)+aip; 
+            restingArmLengths = sqrt(sum((biw-aizero).*(biw-aizero))); % length of arms at zero position
+            currentArmLengths = sqrt(sum((biw-ai).*(biw-ai)));
+            isLengthValid = ~(any(currentArmLengths < app.MinArmLength) || any(currentArmLengths > app.MaxArmLength));
             
             
-            if (1)
-                cla(app.UIAxes);
-                colors = 'rgb';
-                for i=1:3
-                    line(app.UIAxes,X+[0 Rwp(1,i)]*20,Y+[0 Rwp(2,i)]*20,Z+[0 Rwp(3,i)]*20,'linewidth',2,'color',colors(i));
-                end
+            % update the drawing
+            cla(app.UIAxes);
+            
+            % draw the RGB reference frame
+            colors = 'rgb';
+            for i=1:3
+                line(app.UIAxes,X+[0 Rwp(1,i)]*20,Y+[0 Rwp(2,i)]*20,Z+[0 Rwp(3,i)]*20,'linewidth',2,'color',colors(i));
+            end
+            
+            % draw the planes of the platform
+            set(app.UIAxes, 'nextplot','add');
+            patch(app.UIAxes, biw(1,[end 1:end]), biw(2,[end 1:end]), biw(3,[end 1:end]),[0.3 0.3 0.3])
+            scatter3(app.UIAxes,biw(1,:), biw(2,:), biw(3,:),'linewidth',2)
+            patch(app.UIAxes,ai(1,[end 1:end]), ai(2,[end 1:end]), ai(3,[end 1:end]),[0.6 0.6 0.6])
+            scatter3(app.UIAxes,ai(1,:), ai(2,:), ai(3,:),'linewidth',2)
+            
+            % draw the arms of the platform
+            for i=1:6
+                lzero = biw + (ai - biw).*restingArmLengths./currentArmLengths;
                 
-                aizero = repmat([0 0 app.RestHeight]',1,6)+aip; % TODO: improve this, zero position is 10 units up
-                %%
-                set(app.UIAxes, 'nextplot','add');
-                patch(app.UIAxes, biw(1,[end 1:end]), biw(2,[end 1:end]), biw(3,[end 1:end]),[0.3 0.3 0.3])
-                scatter3(app.UIAxes,biw(1,:), biw(2,:), biw(3,:),'linewidth',2)
-%                 plot3(app.UIAxes,aizero(1,[end 1:end]), aizero(2,[end 1:end]), aizero(3,[end 1:end]))
-%                 scatter3(app.UIAxes,aizero(1,:), aizero(2,:), aizero(3,:))
-                patch(app.UIAxes,ai(1,[end 1:end]), ai(2,[end 1:end]), ai(3,[end 1:end]),[0.6 0.6 0.6])
-                scatter3(app.UIAxes,ai(1,:), ai(2,:), ai(3,:),'linewidth',2)
-                
-                
-                zeroLengths = sqrt(sum((biw-aizero).*(biw-aizero))); % length of arms at zero position
-                currentLengths = sqrt(sum((biw-ai).*(biw-ai)));
-                
-                isLengthValid = ~(any(currentLengths < app.MaxArmLength) || any(currentLengths > app.MaxArmLength));
-                    
-                for i=1:6
-                    
-                    lzero = biw + (ai - biw).*zeroLengths./currentLengths;
-                    
-                    line(app.UIAxes,[biw(1,i) lzero(1,i)],[biw(2,i) lzero(2,i)],[biw(3,i) lzero(3,i)],'linewidth',4,'color','green');
-                    line(app.UIAxes,[lzero(1,i) ai(1,i)],[lzero(2,i) ai(2,i)],[lzero(3,i) ai(3,i)],'linewidth',2,'color','red');
-                    
-                end
-                
-                    if ( isLengthValid )
-                        app.UIAxes.Color = 'white';
+                line(app.UIAxes,[biw(1,i) lzero(1,i)],[biw(2,i) lzero(2,i)],[biw(3,i) lzero(3,i)],'linewidth',4,'color','green');
+                line(app.UIAxes,[lzero(1,i) ai(1,i)],[lzero(2,i) ai(2,i)],[lzero(3,i) ai(3,i)],'linewidth',2,'color','red');
+            end
+            
+            % change the background
+            if ( isLengthValid )
+                app.UIAxes.Color = 'white';
+            else
+                app.UIAxes.Color = [1 0.5 0.5];
+            end
+            
+            % add text for each arm
+            for i=1:6
+                text(app.UIAxes, ai(1,i), ai(2,i), ai(3,i)+5, num2str(i), 'fontsize',20,'BackgroundColor','w');
+                text(app.UIAxes, biw(1,i), biw(2,i), biw(3,i)+5, num2str(i),'fontsize',20,'BackgroundColor','w');
+            end
+            app.ArmLengthLabel.Text = ['Arm extension = ' num2str(round(currentArmLengths-app.MinArmLength)*10))];
+            
+            
+            % send commands to hexapod
+            if ( isLengthValid )
                 if ~(isempty(app.hexapod))
-                    temp = floor((currentLengths-app.MinArmLength)*10); % convert to mm
+                    ArmExtensionMMs = floor((currentArmLengths-app.MinArmLength)*10); % convert to mm
                     disp(temp);
                     app.hexapod.constructPacket(temp(5), temp(6), temp(1), temp(2), temp(3), temp(4))
                 end
-                    else
-                        app.UIAxes.Color = [1 0.5 0.5];
-                    end
-                
-                
-                
-                
             end
         end
         
@@ -313,7 +323,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
 
             % Create UIFigure and hide until all components are created
             app.UIFigure = uifigure('Visible', 'off');
-            app.UIFigure.Position = [100 100 640 480];
+            app.UIFigure.Position = [100 100 640 580];
             app.UIFigure.Name = 'UI Figure';
 
             % Create UIAxes
@@ -326,7 +336,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
             app.UIAxes.Position = [1 51 378 405];
             app.UIAxes.XLim = [-120 120];
             app.UIAxes.YLim = [-120 120];
-            app.UIAxes.ZLim = [-10 200];
+            app.UIAxes.ZLim = [-10 160];
 
             % Create XSliderLabel
             app.XSliderLabel = uilabel(app.UIFigure);
@@ -362,7 +372,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
 
             % Create ZSlider
             app.ZSlider = uislider(app.UIFigure);
-            app.ZSlider.Limits = [80 200];
+            app.ZSlider.Limits = [80 140];
             app.ZSlider.ValueChangedFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.ZSlider.ValueChangingFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.ZSlider.Position = [458 350 150 3];
@@ -418,6 +428,13 @@ classdef HexapodSimulator < matlab.apps.AppBase
             app.ResetButton.ButtonPushedFcn = createCallbackFcn(app, @ResetButtonPushed, true);
             app.ResetButton.Position = [475 41 100 22];
             app.ResetButton.Text = 'Reset';
+            
+            
+            % Create ArmLengthLabel
+            app.ArmLengthLabel = uilabel(app.UIFigure);
+            app.ArmLengthLabel.HorizontalAlignment = 'left';
+            app.ArmLengthLabel.Position = [11 530 378 50];
+            app.ArmLengthLabel.Text = 'ARM length=';
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';

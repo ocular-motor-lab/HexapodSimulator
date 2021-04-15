@@ -18,6 +18,8 @@ classdef HexapodSimulator < matlab.apps.AppBase
         psiSlider         matlab.ui.control.Slider
         ConnectCs         matlab.ui.control.Button
         ResetButton       matlab.ui.control.Button
+        
+        ArmLengthLabel    matlab.ui.control.Label
         hexapod
     end
     
@@ -175,21 +177,27 @@ classdef HexapodSimulator < matlab.apps.AppBase
             currentArmLengths = sqrt(sum((biw-ai).*(biw-ai)));
             isLengthValid = ~(any(currentArmLengths < app.MinArmLength) || any(currentArmLengths > app.MaxArmLength));
             
+            ArmExtensionMMs = floor((currentArmLengths-app.MinArmLength)*10); % convert to mm
+            disp(ArmExtensionMMs);
+                    
             
             % update the drawing
             cla(app.UIAxes);
+            
+            % draw the RGB reference frame
             colors = 'rgb';
             for i=1:3
                 line(app.UIAxes,X+[0 Rwp(1,i)]*20,Y+[0 Rwp(2,i)]*20,Z+[0 Rwp(3,i)]*20,'linewidth',2,'color',colors(i));
             end
             
-            
+            % draw the planes of the platform
             set(app.UIAxes, 'nextplot','add');
             patch(app.UIAxes, biw(1,[end 1:end]), biw(2,[end 1:end]), biw(3,[end 1:end]),[0.3 0.3 0.3])
             scatter3(app.UIAxes,biw(1,:), biw(2,:), biw(3,:),'linewidth',2)
             patch(app.UIAxes,ai(1,[end 1:end]), ai(2,[end 1:end]), ai(3,[end 1:end]),[0.6 0.6 0.6])
             scatter3(app.UIAxes,ai(1,:), ai(2,:), ai(3,:),'linewidth',2)
             
+            % draw the arms of the platform
             for i=1:6
                 lzero = biw + (ai - biw).*restingArmLengths./currentArmLengths;
                 
@@ -197,25 +205,25 @@ classdef HexapodSimulator < matlab.apps.AppBase
                 line(app.UIAxes,[lzero(1,i) ai(1,i)],[lzero(2,i) ai(2,i)],[lzero(3,i) ai(3,i)],'linewidth',2,'color','red');
             end
             
+            % change the background
             if ( isLengthValid )
                 app.UIAxes.Color = 'white';
             else
                 app.UIAxes.Color = [1 0.5 0.5];
             end
             
-            
+            % add text for each arm
             for i=1:6
                 text(app.UIAxes, ai(1,i), ai(2,i), ai(3,i)+5, num2str(i), 'fontsize',20,'BackgroundColor','w');
                 text(app.UIAxes, biw(1,i), biw(2,i), biw(3,i)+5, num2str(i),'fontsize',20,'BackgroundColor','w');
             end
+            app.ArmLengthLabel.Text = ['Arm extension = ' num2str(ArmExtensionMMs)];
             
             
             % send commands to hexapod
             if ( isLengthValid )
                 if ~(isempty(app.hexapod))
-                    temp = floor((currentArmLengths-app.MinArmLength)*10); % convert to mm
-                    disp(temp);
-                    app.hexapod.constructPacket(temp(5), temp(6), temp(1), temp(2), temp(3), temp(4))
+                    app.hexapod.constructPacket(ArmExtensionMMs(5), ArmExtensionMMs(6), ArmExtensionMMs(1), ArmExtensionMMs(2), ArmExtensionMMs(3), ArmExtensionMMs(4))
                 end
             end
         end
@@ -316,7 +324,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
 
             % Create UIFigure and hide until all components are created
             app.UIFigure = uifigure('Visible', 'off');
-            app.UIFigure.Position = [100 100 640 480];
+            app.UIFigure.Position = [100 100 640 580];
             app.UIFigure.Name = 'UI Figure';
 
             % Create UIAxes
@@ -421,6 +429,13 @@ classdef HexapodSimulator < matlab.apps.AppBase
             app.ResetButton.ButtonPushedFcn = createCallbackFcn(app, @ResetButtonPushed, true);
             app.ResetButton.Position = [475 41 100 22];
             app.ResetButton.Text = 'Reset';
+            
+            
+            % Create ArmLengthLabel
+            app.ArmLengthLabel = uilabel(app.UIFigure);
+            app.ArmLengthLabel.HorizontalAlignment = 'left';
+            app.ArmLengthLabel.Position = [11 530 378 50];
+            app.ArmLengthLabel.Text = 'ARM length=';
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
