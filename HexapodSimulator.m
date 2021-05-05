@@ -38,8 +38,8 @@ classdef HexapodSimulator < matlab.apps.AppBase
     % Callbacks that handle component events
     methods (Access = private)
 
-        function UpdateGraph(app, X,Y,Z,phi,theta, psi)
-            
+        function [ArmExtensionMMs, isLengthValid,restingArmLengths, currentArmLengths, Rwp, biw, ai] = CalculateArmLength(app, X,Y,Z,phi,theta, psi)
+             
             euler_angles = [phi, theta, psi];
             position = [X,Y,Z];
             
@@ -178,6 +178,12 @@ classdef HexapodSimulator < matlab.apps.AppBase
             isLengthValid = ~(any(currentArmLengths < app.MinArmLength) || any(currentArmLengths > app.MaxArmLength));
             
             ArmExtensionMMs = floor((currentArmLengths-app.MinArmLength)*10); % convert to mm
+        end
+        
+        function UpdateGraph(app, X,Y,Z,phi,theta, psi)
+           
+            [ArmExtensionMMs, isLengthValid,restingArmLengths, currentArmLengths, Rwp, biw, ai] = app.CalculateArmLength(X,Y,Z,phi,theta, psi);
+           
             disp(ArmExtensionMMs);
                     
             
@@ -295,24 +301,27 @@ classdef HexapodSimulator < matlab.apps.AppBase
     
     %% Constructor
     methods
-        function app = HexapodSimulator(  )
+        function app = HexapodSimulator( nogui )
             
-            if ( exist('C:\Users\raulr\Documents\Unity Projects\HexapodSimulator\ClassLibrary1.dll', 'file') )
-                asm = NET.addAssembly('C:\Users\raulr\Documents\Unity Projects\HexapodSimulator\ClassLibrary1.dll');
-                app.hexapod = ClassLibrary1.Class1;
+            if ( nargin == 0 )
+                if ( exist('C:\Users\raulr\Documents\Unity Projects\HexapodSimulator\ClassLibrary1.dll', 'file') )
+                    asm = NET.addAssembly('C:\Users\raulr\Documents\Unity Projects\HexapodSimulator\ClassLibrary1.dll');
+                    app.hexapod = ClassLibrary1.Class1;
+                end
+                
+                app.createComponents();
+                
+                X = app.XSlider.Value;
+                Y = app.YSlider.Value;
+                Z = app.ZSlider.Value;
+                
+                phi = app.phiSlider.Value;
+                theta = app.thetaSlider.Value;
+                psi = app.psiSlider.Value;
+                
+                app.UpdateGraph(X,Y,Z,phi, theta, psi);
+            else
             end
-            
-            app.createComponents();
-            
-            X = app.XSlider.Value;
-            Y = app.YSlider.Value;
-            Z = app.ZSlider.Value;
-            
-            phi = app.phiSlider.Value;
-            theta = app.thetaSlider.Value;
-            psi = app.psiSlider.Value;
-            
-            app.UpdateGraph(X,Y,Z,phi, theta, psi);
         end
     end
 
