@@ -54,14 +54,14 @@ classdef HexapodSimulator < matlab.apps.AppBase
         MaxArmLength = 150;
     end
     
-    properties (Access = public)
+    properties
         %
         % Reference frame 
         %
         % We can redefine the reference frame in any possible point and
         % orientation in the hexapod to calculate rotations around that
         % reference frame
-        RefX = 0;
+        RefX = 30;
         RefY = 0;
         RefZ = 0;
 %         RefTheta = 0;
@@ -269,9 +269,9 @@ classdef HexapodSimulator < matlab.apps.AppBase
         % phiSlider, psiSlider, thetaSlider
         function SliderValueChanged(app, event)
             
-            app.RefX = app.XRefSlider.Value;
-            app.RefY = app.YRefSlider.Value;
-            app.RefZ = app.ZRefSlider.Value;
+            app.XRef = app.XRefSlider.Value;
+            app.YRef = app.YRefSlider.Value;
+            app.ZRef = app.ZRefSlider.Value;
             
             X = app.XSlider.Value;
             Y = app.YSlider.Value;
@@ -295,11 +295,8 @@ classdef HexapodSimulator < matlab.apps.AppBase
                 elseif ( event.Source == app.psiSlider)
                     psi = event.Value;
                 elseif ( event.Source == app.XRefSlider)
-                    app.RefX = event.Value;
                 elseif ( event.Source == app.YRefSlider)
-                    app.RefY = event.Value;
                 elseif ( event.Source == app.ZRefSlider)
-                    app.RefZ = event.Value;
                 end
             end
             app.UpdateGraph(X,Y,Z,phi, theta, psi);
@@ -315,10 +312,6 @@ classdef HexapodSimulator < matlab.apps.AppBase
 
         % Button pushed function: ResetButton
         function ResetButtonPushed(app, event)
-            
-            app.RefX = 0;
-            app.RefY = 0;
-            app.RefZ = 0;
             
             app.XSlider.Value = 0;
             app.YSlider.Value = 0;
@@ -388,7 +381,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
             ylabel(app.UIAxes, 'Y')
             app.UIAxes.Projection = 'perspective';
             app.UIAxes.View = [45 30];
-            app.UIAxes.Position = [1 51 378 505];
+            app.UIAxes.Position = [1 51 378 405];
             app.UIAxes.XLim = [-120 120];
             app.UIAxes.YLim = [-120 120];
             app.UIAxes.ZLim = [-10 160];
@@ -481,7 +474,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
 
             % Create XRefSlider
             app.XRefSlider = uislider(app.UIFigure);
-            app.XRefSlider.Limits = [-100 100];
+            app.XRefSlider.Limits = [-30 30];
             app.XRefSlider.ValueChangedFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.XRefSlider.ValueChangingFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.XRefSlider.Position = [458 543 150 3]+[0 80 0 0];
@@ -494,7 +487,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
 
             % Create YRefSlider
             app.YRefSlider = uislider(app.UIFigure);
-            app.YRefSlider.Limits = [-100 100];
+            app.YRefSlider.Limits = [-30 30];
             app.YRefSlider.ValueChangedFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.YRefSlider.ValueChangingFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.YRefSlider.Position = [458 492 150 3]+[0 80 0 0];
@@ -507,10 +500,11 @@ classdef HexapodSimulator < matlab.apps.AppBase
 
             % Create ZRefSlider
             app.ZRefSlider = uislider(app.UIFigure);
-            app.ZRefSlider.Limits = [-100 100];
+            app.ZRefSlider.Limits = [80 140];
             app.ZRefSlider.ValueChangedFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.ZRefSlider.ValueChangingFcn = createCallbackFcn(app, @SliderValueChanged, true);
             app.ZRefSlider.Position = [458 450 150 3]+[0 80 0 0];
+            app.ZRefSlider.Value = app.RestHeight;
             
             % Create Connect Button     
             app.ConnectCs = uibutton(app.UIFigure, 'push');
@@ -528,7 +522,7 @@ classdef HexapodSimulator < matlab.apps.AppBase
             % Create ArmLengthLabel
             app.ArmLengthLabel = uilabel(app.UIFigure);
             app.ArmLengthLabel.HorizontalAlignment = 'left';
-            app.ArmLengthLabel.Position = [11 630 378 50];
+            app.ArmLengthLabel.Position = [11 530 378 50];
             app.ArmLengthLabel.Text = 'ARM length=';
 
             % Show the figure after all components are created
